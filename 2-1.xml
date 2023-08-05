@@ -1,0 +1,309 @@
+
+> 服务器机型：centos7
+>
+> 部署步骤：**生产环**境 + Https（需要SSL证书） + mysql**数据库**
+
+****
+
+
+
+## 2.1、克隆项目
+
+~~~
+git@gitee.com:sheep-are-flying-in-the-sky/laoyangzhixuewang.git
+~~~
+
+![image-20220228090231051](https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228090231051.png)
+
+
+
+
+
+## 2.2、安装部署环境
+
+- centos7.6 
+- [JDK 1.8](https://gitee.com/sheep-are-flying-in-the-sky/my-node/blob/master/11%E3%80%81%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/17%E3%80%81Linux%E5%AE%89%E8%A3%85JDK%E3%80%81Mysql%E3%80%81Maven%E3%80%81Git%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.md)
+- [MySQL 5.6](https://gitee.com/sheep-are-flying-in-the-sky/my-node/blob/master/11%E3%80%81%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/17%E3%80%81Linux%E5%AE%89%E8%A3%85JDK%E3%80%81Mysql%E3%80%81Maven%E3%80%81Git%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.md)
+
+- [Nginx 1.20.2](https://gitee.com/sheep-are-flying-in-the-sky/my-node/blob/master/11%E3%80%81%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/17%E3%80%81Linux%E5%AE%89%E8%A3%85JDK%E3%80%81Mysql%E3%80%81Maven%E3%80%81Git%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.md)
+- [Nacos 1.4.1](https://gitee.com/sheep-are-flying-in-the-sky/my-node/blob/master/11%E3%80%81%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/17%E3%80%81Linux%E5%AE%89%E8%A3%85JDK%E3%80%81Mysql%E3%80%81Maven%E3%80%81Git%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.md)
+
+- [Nodejs(14.16.0）](https://sre.ink/centos7-%E5%AE%89%E8%A3%85node-v14-16-0-npm-6-14-11/)
+
+
+
+
+
+## 2.3、部署前端（前台）
+
+- 进入文件夹
+
+![image-20220228100730721](https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228100730721.png)
+
+
+
+
+
+- 执行命令 (打包：上传)
+
+~~~shell
+第一步：
+	npm run build
+
+第二步：
+	创建文件夹 cd /usr/nuxt
+
+第三步：
+	拷贝
+		.nuxt,
+		static,
+		package.json,
+		nuxt.config.js            四个文件 --->>> 到nuxt
+	
+第四步：
+	npm install -production
+	npm start
+	
+第五步：后台运行Nuxt
+	npm config set registry https://registry.npm.taobao.org  #换淘宝源
+	npm i pm2 -g											#安装pm2
+	pm2 start npm --name "nuxt" -- run start				#在nuxt目录里面用
+	
+第六步：停止pm2后台的nuxt
+	pm2 list    #查看名称：app_name;  查看Id。
+	pm2 stop all #终止所有
+~~~
+
+
+
+- 后台运行（Nuxt）
+
+![image-20220226160128555](https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220226160128555.png)
+
+
+
+- 看效果
+
+<img src="https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220226154258142.png" alt="image-20220226154258142" style="zoom: 33%;" />
+
+
+
+
+
+## 2.4、部署前端（后台）
+
+- 进入目录
+
+<img src="https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228101052836.png" alt="image-20220228101052836" style="zoom: 50%;" />
+
+
+
+- 打包
+
+~~~shell
+npm install     #安装依赖
+npm run build   #打包
+~~~
+
+
+
+- 上传Nginx的html目录下
+
+![image-20220228101359223](https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228101359223.png)
+
+
+
+
+
+
+
+## 2.5、后端配置
+
+### 2.5.1、配置Mysql
+
+~~~mysql
+# 创建数据库
+create database laoyang   
+
+# 导入表
+mysql -uroot -p123456 laoyang < laoyang.sql
+~~~
+
+
+
+### 2.5.2、配置Nginx
+
+~~~nginx
+#user  nobody;
+worker_processes  1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+	client_max_body_size 1024M;                    #上传文件大小限制
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+
+    #gzip  on;
+	
+	server {
+	  listen 80;
+	  server_name www.yangzaikongzhongfei.com yangzaikongzhongfei.com;
+	  return 301 https://www.yangzaikongzhongfei.com;
+	}
+
+
+    # HTTPS server
+    server {
+		listen 443 ssl;
+		server_name www.yangzaikongzhongfei.com yangzaikongzhongfei.com;
+		ssl_certificate /usr/local/nginx/ssl/yangzaikongzhongfei.com_bundle.crt; 
+        #私钥文件名称
+        ssl_certificate_key /usr/local/nginx/ssl/yangzaikongzhongfei.com.key; 
+		ssl_session_timeout 5m;
+        #请按照以下协议配置
+        ssl_protocols TLSv1.2 TLSv1.3; 
+        #请按照以下套件配置，配置加密套件，写法遵循 openssl 标准。
+        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE; 
+        ssl_prefer_server_ciphers on;
+
+
+	  #以下内容请按域名需要进行配置，此处仅供参考
+		location / {
+			root   html;
+			index  index.html index.htm;
+			proxy_pass              http://127.0.0.1:3000;
+		}
+		
+		location /new {
+           #此为新应用index,static目录，同时注意这里是alias,不是root，还有以及new的后面有/结尾
+			alias html/new/;
+			try_files $uri $uri/ /new/index.html;
+			index index.html index.htm;
+              
+        }
+		
+		location ~ /eduservice/ {
+           proxy_pass   http://127.0.0.1:8001;
+        }
+
+        location ~ /eduoss/fileoss/ {
+           proxy_pass   http://127.0.0.1:8002;
+        }
+		
+		location ~ /service/vod/ {
+           proxy_pass   http://127.0.0.1:8003;
+        }
+		
+		location ~ /msm/send/ {
+           proxy_pass   http://127.0.0.1:8005;
+        }
+		
+		location ~ /api/ucenter/ {
+           proxy_pass   http://127.0.0.1:8160;
+        }
+		
+		location ~ /eduorder/ {
+           proxy_pass   http://127.0.0.1:8007;
+        }
+		
+		location ~ /statservice/ {
+           proxy_pass   http://127.0.0.1:8008;
+        }
+    }
+
+}
+~~~
+
+
+
+### 2.5.3、启动Nacos
+
+~~~shell
+./startup.sh -m standalone
+~~~
+
+
+
+### 2.5.4、配置Https
+
+<img src="https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228103229419.png" alt="image-20220228103229419" style="zoom:50%;" />
+
+---
+
+![image-20220228103439118](https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228103439118.png)
+
+
+
+
+
+### 2.5.5、上传后端jar包
+
+- 进入目录
+
+~~~shell
+cd /usr/local   #进入local目录
+
+mkdir javaFile  #创建放jar的文件夹
+~~~
+
+
+
+- 打包上传Jar
+
+<img src="https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228091011678.png" alt="image-20220228091011678" style="zoom: 50%;" />
+
+---
+
+<img src="https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228094911291.png" alt="image-20220228094911291" style="zoom: 50%;" />
+
+---
+
+- 拷贝jar放入
+
+<img src="https://cdn.laoyangzhijia.com/my-picture-master/pic15/image-20220228100329931.png" alt="image-20220228100329931" style="zoom: 50%;" />
+
+---
+
+
+
+- 运行
+
+~~~shell
+1、创建javaFile
+	cd /usr/local			#进入local
+	mkdir javaFile			#创建文件夹
+	cd javaFile				#进入文件夹
+	
+2、上传jar包, 后台运行	
+nohup java -jar service_edu-1.0-SNAPSHOT.jar > log/edu.log 2>&1 &
+nohup java -jar -Xms64m -Xmx64m service_oss-1.0-SNAPSHOT.jar > log/oss.log 2>&1 &
+nohup java -jar -Xms64m -Xmx64m service_vod-1.0-SNAPSHOT.jar > log/vod.log 2>&1 &
+nohup java -jar -Xms64m -Xmx64m service_msm-1.0-SNAPSHOT.jar > log/msm.log 2>&1 &
+nohup java -jar -Xms64m -Xmx64m service_order-1.0-SNAPSHOT.jar > log/order.log 2>&1 &
+nohup java -jar -Xms64m -Xmx64m service_statistics-1.0-SNAPSHOT.jar > log/statistics.log 2>&1 &
+nohup java -jar -Xms64m -Xmx64m service_ucenter-1.0-SNAPSHOT.jar > log/ucenter.log 2>&1 &
+~~~
+
+
+
